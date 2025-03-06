@@ -1,6 +1,11 @@
 #include <stm32f031x6.h>
 #include "display.h"
+#define MAZE_BLOCK_COUNT 5
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
 
+#define MAX_SPOTS 10
 
 void initClock(void);
 void initSysTick(void);
@@ -11,6 +16,20 @@ int isInside(uint16_t x1, uint16_t y1, uint16_t w, uint16_t h, uint16_t px, uint
 void enablePullUp(GPIO_TypeDef *Port, uint32_t BitNumber);
 void pinMode(GPIO_TypeDef *Port, uint32_t BitNumber, uint32_t Mode);
 int hitMaze(uint16_t playerx,uint16_t playery,uint16_t w, uint16_t h);
+
+typedef struct {
+	uint16_t x;
+	uint16_t y;
+} Spot;
+
+Spot spots[MAX_SPOTS];
+
+void generateRandomSpots() {
+    for (int i = 0; i < MAX_SPOTS; i++) {
+        spots[i].x = rand() % 110; // Assuming screen width is 120
+        spots[i].y = rand() % 130; // Assuming screen height is 160
+    }
+}
 
 volatile uint32_t milliseconds;
 
@@ -35,11 +54,28 @@ const uint16_t deco3[]=
 };
 const uint16_t dg1[]=
 {
-	0,0,16142,16142,16142,16142,16142,16142,16142,16142,0,0,0,0,0,16142,16142,16142,16142,16142,16142,0,0,0,0,0,16142,16142,16142,16142,16142,16142,16142,16142,0,0,0,0,16142,16142,16142,1994,1994,16142,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,1994,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,1994,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,1994,16142,16142,0,0,0,0,16142,16142,16142,1994,1994,16142,16142,16142,0,0,0,0,16142,16142,16142,16142,16142,16142,16142,16142,0,0,0,0,16142,16142,16142,1994,1994,1994,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,16142,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,16142,16142,16142,0,0,0,0,16142,16142,16142,1994,16142,1994,16142,16142,0,0,0,0,16142,16142,16142,1994,1994,1994,16142,16142,0,0,0,0,0,16142,16142,16142,16142,16142,16142,0,0,0,0,0,0,16142,16142,16142,16142,16142,16142,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,0,65287,48141,0,0,0,0,0,0,0,0,0,65287,65287,48141,0,0,0,0,0,0,0,0,0,65287,65287,65287,0,0,0,0,0,0,0,0,65287,65287,65287,48141,0,0,4098,4098,0,0,0,0,65287,65287,65287,48141,0,0,4098,4098,0,0,65287,65287,65287,65287,48141,48141,0,0,65287,65287,65287,65287,65287,65287,65287,65287,48141,48141,0,0,0,48141,48141,65287,65287,65287,65287,48141,0,0,0,0,0,0,0,48141,48141,48141,48141,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
+const uint16_t deadMonkey[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,6342,6342,6342,6342,6342,6342,6342,6342,4098,0,0,0,0,0,0,6342,4228,4228,6342,6342,6342,6342,4228,4228,6342,0,0,0,0,30300,30300,6342,4228,4228,6342,6342,6342,6342,4228,4228,6342,30300,30300,0,0,30300,30300,4228,6342,6342,6342,4228,4228,6342,6342,6342,4228,30300,30300,0,0,30300,30300,4228,4228,6342,6342,4228,4228,6342,6342,4228,4228,30300,30300,0,0,30300,30300,4228,4228,65535,4228,65535,4228,65535,4228,4228,4228,30300,30300,0,0,0,0,4098,4228,4228,4228,4228,4228,4228,4228,4228,4098,0,0,0,0,0,0,0,0,4228,65535,4228,65535,4228,65535,0,0,0,0,0,30300,4098,4098,4098,4098,4098,4098,30300,30300,4098,4098,4098,4098,4098,4098,30300,0,0,0,0,0,0,4098,30300,30300,4098,0,0,0,0,0,0,0,30300,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,30300,0,0,30300,4098,4098,4098,0,0,
+};
+
+const uint16_t heart[]={
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7936,7936,7936,7936,0,0,0,0,7936,7936,7936,7936,0,0,0,7936,7936,7936,65535,7936,7936,0,0,7936,7936,7936,65535,7936,7936,0,0,7936,7936,7936,7936,65535,7936,7936,7936,7936,7936,7936,7936,65535,7936,0,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,0,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,0,0,0,46120,46120,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,0,0,0,0,0,46120,46120,7936,7936,7936,7936,7936,7936,46120,46120,0,0,0,0,0,0,0,46120,46120,7936,7936,7936,7936,46120,46120,0,0,0,0,0,0,0,0,0,46120,46120,7936,7936,46120,46120,0,0,0,0,0,0,0,0,0,0,0,46120,46120,46120,46120,0,0,0,0,0,0,0,0,0,0,0,0,0,46120,46120,0,0,0,0,0,0,0,
+};
+
+void drawSpots() {
+	for (int i = 0; i < MAX_SPOTS; i++) {
+		putImage(spots[i].x, spots[i].y, 12,16, dg1, 0, 0); // Assuming bananaImage is defined
+	}
+};
+
+
 int main()
-{
+{	
+	
+	
 	int hinverted = 0;
 	int vinverted = 0;
 	int toggle = 0;
@@ -52,18 +88,26 @@ int main()
 	initClock();
 	initSysTick();
 	setupIO();
+	int banana = 0;
 
-	putImage(40,120,16,16,monkey1,0,0);
-	putImage(20,80,12,16,dg1,0,0);
+	srand();
+	generateRandomSpots();
+	drawSpots();
+	int hearts = 3;
 	while(1)
-	{
+	{	
+		for (int i = 0; i < hearts; i++)
+		{
+			putImage(80+16*i,0,16,16,heart,0,0);
+		};
+		
 		hmoved = vmoved = 0;
 		hinverted = vinverted = 0;
 		if ((GPIOB->IDR & (1 << 4))==0) // right pressed
 		{					
 			if (x < 110)
 			{
-				x = x + 1;
+				x = x + 4;
 				hmoved = 1;
 				hinverted=0;
 			}						
@@ -71,9 +115,9 @@ int main()
 		if ((GPIOB->IDR & (1 << 5))==0) // left pressed
 		{			
 			
-			if (x > 10)
+			if (x > 4)
 			{
-				x = x - 1;
+				x = x - 4;
 				hmoved = 1;
 				hinverted=1;
 			}			
@@ -82,28 +126,31 @@ int main()
 		{
 			if (y < 140)
 			{
-				y = y + 1;			
+				y = y + 4;			
 				vmoved = 1;
 				vinverted = 0;
 			}
 		}
 		if ( (GPIOA->IDR & (1 << 8)) == 0) // up pressed
 		{			
-			if (y > 16)
+			if (y > 14)
 			{
-				y = y - 1;
+				y = y - 4;
 				vmoved = 1;
 				vinverted = 1;
 			}
 		}
+		
 		if ((vmoved) || (hmoved))
 		{
 			// only redraw if there has been some movement (reduces flicker)
-			fillRectangle(oldx,oldy,12,16,0);
+			fillRectangle(oldx,oldy,18,16,0);
 			oldx = x;
-			oldy = y;					
+			oldy = y;
+			putImage(20,80,12,16,dg1,0,0);					
 			if (hmoved)
-			{
+			{	
+				
 				if (toggle)
 					putImage(x,y,16,16,monkey1,hinverted,0);
 				else
@@ -116,20 +163,21 @@ int main()
 				putImage(x,y,16,16,monkeyUp,0,vinverted);
 			}
 			// Now check for an overlap by checking to see if ANY of the 4 corners of deco are within the target area
-			if (isInside(20,80,12,16,x,y) || isInside(20,80,12,16,x+12,y) || isInside(20,80,12,16,x,y+16) || isInside(20,80,12,16,x+12,y+16) )
-			{
-				printTextX2("monke hapi", 2, 4, RGBToWord(0xff,0xff,0), 0);
-			}
+			if (isInside(20,80,12,16,x,y) )
+			{	
+				banana+=1;
+				printNumberX2(banana, 0,0, RGBToWord(0xff,0xff,0), 0);
+			};
 		}		
 		delay(50);
-
-        for (int i=0; i < MAZE_BLOCK_COUNT; i++)
-		{
-			putImage(mazeX[i], mazeY[i],2,2,dg1,0,0);
-		}
+		
 	}
 	return 0;
 }
+
+
+
+
 void initSysTick(void)
 {
 	SysTick->LOAD = 48000;
@@ -219,36 +267,4 @@ void setupIO()
 	enablePullUp(GPIOB,5);
 	enablePullUp(GPIOA,11);
 	enablePullUp(GPIOA,8);
-}
-
-int hitMaze(uint16_t playerx,uint16_t playery,uint16_t w, uint16_t h)
-{
-	int rvalue = 0;
-	
-	int mazeblock=0;
-	for (mazeblock = 0; mazeblock < MAZE_BLOCK_COUNT; mazeblock++)
-	{
-		if (isInside(mazeX[mazeblock],mazeY[mazeblock],w,h,playerx,playery)==1)
-		{
-			rvalue = 1;
-			break;
-		}
-		if (isInside(mazeX[mazeblock],mazeY[mazeblock],w,h,playerx+16,playery)==1)
-		{
-			rvalue = 1;
-			break;
-		}
-		if (isInside(mazeX[mazeblock],mazeY[mazeblock],w,h,playerx+16,playery+16)==1)
-		{
-			rvalue = 1;
-			break;
-		}
-		if (isInside(mazeX[mazeblock],mazeY[mazeblock],w,h,playerx,playery+16)==1)
-		{
-			rvalue = 1;
-			break;
-		}
-
-	}
-	return rvalue;
 }
