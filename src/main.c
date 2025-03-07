@@ -186,12 +186,26 @@ int main()
 	initSysTick();
 	setupIO();
 
+	
+
 	fillRectangle(0,0,128,160,0);
 	printText("Press up to start", 0, 0, RGBToWord(0xff,0xff,0),0);
 	putImage(10,10,50,50,startup,0,0);
 	while((GPIOA -> IDR & (1 << 8)) != 0){
 		int isplaying = 0;
 	};
+	fillRectangle(0,0,128,160,0);
+
+
+	//menu
+	do {
+		printTextX2("Menu", 40, 0, RGBToWord(0xff,0xff,0),0);
+		drawRectangle(10, 20, 108, 130, RGBToWord(0xff,0xff,0));
+		printText("^. Play", 20, 40, RGBToWord(0xff,0xff,0),0);
+		printText("v. Guide", 20, 60, RGBToWord(0xff,0xff,0),0);
+		printText(">. Credits", 20, 80, RGBToWord(0xff,0xff,0),0);
+	} while(1);
+
 	
 	int isplaying = 1;
 	fillRectangle(0,0,128,160,0);
@@ -207,6 +221,9 @@ int main()
 	int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count, int isBad);
 	
 	int ingame = 1;
+
+	
+
 
 	while(isplaying)
 	{	
