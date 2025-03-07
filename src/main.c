@@ -74,6 +74,7 @@ const uint16_t startup[]={
 };
 
 void drawHearts(int hearts) {
+	fillRectangle(80,0,80,16,0);
 	for (int i = 0; i < hearts; i++)
 		{
 			putImage(80+16*i,0,16,16,heart,0,0);
@@ -98,13 +99,14 @@ int main()
 	int banana = 0;
 
 
-
+	fillRectangle(0,0,128,160,0);
+	printText("Press up to start", 0, 0, RGBToWord(0xff,0xff,0),0);
+	putImage(10,10,50,50,startup,0,0);
 	while((GPIOA -> IDR & (1 << 8)) != 0){
-		fillRectangle(0,0,128,160,0);
-		printText("Press up to start", 0, 0, RGBToWord(0xff,0xff,0),0);
-		putImage(10,10,50,50,startup,0,0);
 		int isplaying = 0;
 	};
+
+	int isplaying = 1;
 	fillRectangle(0,0,128,160,0);
 	randomize();
 	generateGoodRandomSpots();
@@ -117,15 +119,12 @@ int main()
 	int collisions(int x, int y, int hearts);
 	int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count, int isBad);
 
-	
-
-	int isplaying = 1;
 	int ingame = 1;
 
 	while(isplaying)
 	{	
 		
-		
+		drawHearts(hearts);
 		while(ingame)
 		{	
 			printText("ingame", 0,150, RGBToWord(0xff,0xff,0),0);
@@ -137,6 +136,7 @@ int main()
 					GPIOA->ODR |= (1 << 1);
 					hearts == 0 ? 0 : hearts--;
 					buttonPressed = 1;
+					drawHearts(hearts);
 				}
 			} else{
 				GPIOA->ODR &= ~(1 << 1);
@@ -225,19 +225,18 @@ int main()
 			putImage(10,10,16,16,deadMonkey,0,0);
 			printTextX2("GAME OVER", 0,40, RGBToWord(0xff,0xff,0),0);
 			printText("Top key(Restart)", 0,90, RGBToWord(0xff,0xff,0),0);
-			delay(100);
-			if ((GPIOA -> IDR & (1 << 8)) == 0){
-				fillRectangle(0,0,128,160,0);
-				putImage(x,y,16,16,monkey1,0,0);
-				randomize();
-				generateGoodRandomSpots();
-				randomize();
-				generateBadRandomSpots();
-				drawBadSpots();
-				drawGoodSpots();
-				ingame = 1;
-				hearts = 3;
-			}
+			
+			while ((GPIOA -> IDR & (1 << 8)) != 0);
+			fillRectangle(0,0,128,160,0);
+			putImage(x,y,16,16,monkey1,0,0);
+			randomize();
+			generateGoodRandomSpots();
+			randomize();
+			generateBadRandomSpots();
+			drawBadSpots();
+			drawGoodSpots();
+			ingame = 1;
+			hearts = 3;
 		};
 		delay(50);
 		
