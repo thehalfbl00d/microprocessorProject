@@ -185,8 +185,6 @@ int main()
 	initClock();
 	initSysTick();
 	setupIO();
-	
-	harryPotterTheme();
 
 	fillRectangle(0,0,128,160,0);
 	printText("Press up to start", 0, 0, RGBToWord(0xff,0xff,0),0);
@@ -224,10 +222,6 @@ int main()
 			if((GPIOB -> IDR & (1 << 3))==0){
 				if(!buttonPressed){
 					harryPotterTheme();
-					GPIOA->ODR |= (1 << 1);
-					hearts == 0 ? 0 : hearts--;
-					buttonPressed = 1;
-					drawHearts(hearts);
 				}
 			} else{
 				GPIOA->ODR &= ~(1 << 1);
