@@ -85,6 +85,91 @@ void drawHearts(int hearts) {
 		};
 }
 
+void harryPotterTheme(){
+	initSound();
+for (int i = 0; i < 1; i++)
+{
+    playNote(E5);
+    delay(150);
+    playNote(B4);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(D5);
+    delay(300);
+    playNote(C5);
+    delay(150);
+    playNote(B4);
+    delay(150);
+    playNote(A4);
+    delay(300);
+    playNote(A4);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(E5);
+    delay(300);
+    playNote(D5);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(B4);
+    delay(300);
+    playNote(B4);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(D5);
+    delay(300);
+    playNote(E5);
+    delay(300);
+    playNote(C5);
+    delay(300);
+    playNote(A4);
+    delay(300);
+    playNote(A4);
+    delay(300);
+    
+    playNote(D5);
+    delay(300);
+    playNote(F5);
+    delay(150);
+    playNote(A5);
+    delay(300);
+    playNote(G5);
+    delay(150);
+    playNote(F5);
+    delay(150);
+    playNote(E5);
+    delay(300);
+    playNote(C5);
+    delay(150);
+    playNote(E5);
+    delay(300);
+    playNote(D5);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(B4);
+    delay(300);
+    playNote(B4);
+    delay(150);
+    playNote(C5);
+    delay(150);
+    playNote(D5);
+    delay(300);
+    playNote(E5);
+    delay(300);
+    playNote(C5);
+    delay(300);
+    playNote(A4);
+    delay(300);
+    playNote(A4);
+    delay(300);
+	playNote(0);
+}
+};
+
 int main()
 {	
 	int hinverted = 0;
@@ -100,7 +185,8 @@ int main()
 	initClock();
 	initSysTick();
 	setupIO();
-
+	
+	harryPotterTheme();
 
 	fillRectangle(0,0,128,160,0);
 	printText("Press up to start", 0, 0, RGBToWord(0xff,0xff,0),0);
@@ -108,7 +194,7 @@ int main()
 	while((GPIOA -> IDR & (1 << 8)) != 0){
 		int isplaying = 0;
 	};
-
+	
 	int isplaying = 1;
 	fillRectangle(0,0,128,160,0);
 	randomize();
@@ -121,13 +207,14 @@ int main()
 	putImage(x,y,16,16,monkey1,0,0);
 	int collisions(int x, int y, int hearts);
 	int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count, int isBad);
-
+	
 	int ingame = 1;
 
 	while(isplaying)
 	{	
 		
 		drawHearts(hearts);
+		
 		while(ingame)
 		{	
 			printText("ingame", 0,150, RGBToWord(0xff,0xff,0),0);
@@ -136,6 +223,7 @@ int main()
 			//check for suicide
 			if((GPIOB -> IDR & (1 << 3))==0){
 				if(!buttonPressed){
+					harryPotterTheme();
 					GPIOA->ODR |= (1 << 1);
 					hearts == 0 ? 0 : hearts--;
 					buttonPressed = 1;
