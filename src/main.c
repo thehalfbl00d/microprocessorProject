@@ -7,8 +7,8 @@
 #include "sound.h"
 #include "musical_notes.h"
 
-#define MAX_SPOTS_GOOD 7
-#define MAX_SPOTS_BAD 3
+#define MAX_SPOTS_GOOD 10
+#define MAX_SPOTS_BAD 4
 uint32_t shift_register=0;
 void initClock(void);
 void initSysTick(void);
@@ -32,6 +32,7 @@ void drawHearts(int Hearts);
 void harryPotterTheme();
 void lostSound();
 int collisions(int x, int y, int hearts);
+void guide();
 void menu();
 
 int points = 0;
@@ -100,28 +101,52 @@ int main()
 	initClock();
 	initSysTick();
 	setupIO();
+	
 
 	
 	//startup screen
 	fillRectangle(0,0,128,160,0);
 	printText("Press Start Key!", 0, 0, RGBToWord(0xff,0xff,0),0);
 	putImage(10,10,50,50,startup,0,0);
+	initSound();
+	harryPotterTheme();
 	while((GPIOB -> IDR & (1 << 3)) != 0){
 		int isplaying = 0;
 	};
+	
 	
 	fillRectangle(0,0,128,160,0);
 
 	
 	menu();
-
-	//populate screen
-	
 	
 	
 	return 0;
 }
 
+void menu(){
+	fillRectangle(0,0,128,160,0);
+	do {
+		printTextX2("Menu", 40, 0, RGBToWord(0xff,0xff,0),0);
+		drawRectangle(10, 20, 108, 130, RGBToWord(0xff,0xff,0));
+		printText("^. Play", 20, 40, RGBToWord(0xff,0xff,0),0);
+		printText("v. Guide", 20, 60, RGBToWord(0xff,0xff,0),0);
+		printText(">. Credits", 20, 80, RGBToWord(0xff,0xff,0),0);
+
+		if((GPIOA -> IDR & (1 << 8)) == 0){
+			game();
+			break;
+		}
+		if((GPIOA -> IDR & (1 << 11)) == 0){
+			guide();
+			while((GPIOB -> IDR & (1 << 3)) == 0);
+			
+			menu();
+				
+			break;
+		}
+	} while(1);
+}
 
 void game(){
 	//yeye variables
@@ -133,7 +158,7 @@ void game(){
 	int vmoved = 0;
 	int buttonPressed = 0;
 	int ingame = 1;
-	int hearts = 3;
+	int hearts = 4;
 	int isplaying = 1;
 	uint16_t x = 0;
 	uint16_t y = 20;
@@ -250,8 +275,10 @@ void game(){
 			//restart game
 			fillRectangle(0,0,128,160,0);
 			putImage(x,y,16,16,monkey1,0,0);
+
 			removebadBanana();
 			removeGoodBanana();
+
 			randomize();
 			generateGoodRandomSpots();
 			randomize();
@@ -410,6 +437,7 @@ uint32_t prbs()
 }
 
 int collisions(int x, int y, int hearts){
+	initSound();
 	for (int i = 0; i < MAX_SPOTS_GOOD; i++)
 	{
 		if(	isInside(goodBananas[i].x,goodBananas[i].y,12,16,x,y) || 
@@ -421,7 +449,10 @@ int collisions(int x, int y, int hearts){
 			goodBananas[i].x = 0xFFFF; // Mark as removed
 			goodBananas[i].y = 0xFFFF;
 			(*pointsPtr)++;
+			playNote(G4);
 			if (*pointsPtr % 3 == 0){
+				removebadBanana();
+				removeGoodBanana();
 				printNumberX2(*pointsPtr, 0, 0, RGBToWord(0xff,0xff,0),0);
 				randomize();
 				generateGoodRandomSpots();
@@ -439,7 +470,7 @@ int collisions(int x, int y, int hearts){
 		{
 			fillRectangle(badBananas[i].x,badBananas[i].y,16,16,0);
 
-			
+			playNote(E4);
 			badBananas[i].x = 0xFFFF; // Mark as removed
 			badBananas[i].y = 0xFFFF;
 			if (hearts > 0) hearts--;
@@ -543,10 +574,10 @@ void drawBadSpots() {
 };
 
 void drawHearts(int hearts) {
-	fillRectangle(80,0,80,16,0);
+	fillRectangle(60,0,80,16,0);
 	for (int i = 0; i < hearts; i++)
 		{
-			putImage(80+16*i,0,16,16,heart,0,0);
+			putImage(60+16*i,0,16,16,heart,0,0);
 		};
 }
 
@@ -649,31 +680,13 @@ void lostSound(){
 	}
 }
 
-void menu(){
-	//menu
+void guide(){
 	fillRectangle(0,0,128,160,0);
-	do {
-		printTextX2("Menu", 40, 0, RGBToWord(0xff,0xff,0),0);
-		drawRectangle(10, 20, 108, 130, RGBToWord(0xff,0xff,0));
-		printText("^. Play", 20, 40, RGBToWord(0xff,0xff,0),0);
-		printText("v. Guide", 20, 60, RGBToWord(0xff,0xff,0),0);
-		printText(">. Credits", 20, 80, RGBToWord(0xff,0xff,0),0);
-
-		if((GPIOA -> IDR & (1 << 8)) == 0){
-			game();
-			break;
-		}
-		if((GPIOA -> IDR & (1 << 11)) == 0){
-			fillRectangle(0,0,128,160,0);
-			printText("Guide", 0, 0, RGBToWord(0xff,0xff,0),0);
-			printText("Use the arrow keys ", 0, 20, RGBToWord(0xff,0xff,0),0);
-			printText("to move the monkey ", 0, 40, RGBToWord(0xff,0xff,0),0);
-			printText("Collect the good ", 0, 60, RGBToWord(0xff,0xff,0),0);
-			printText("bananas to gain points Avoid the bad bananas to not lose points You have 3 lives", 0, 80, RGBToWord(0xff,0xff,0),0);
-			printText("Press the restart button to restart the game", 0, 100, RGBToWord(0xff,0xff,0),0);
-			printText("Press the start button to go back to the menu", 0, 120, RGBToWord(0xff,0xff,0),0);
-			while((GPIOB -> IDR & (1 << 8)) == 0);
-			delay(100);
-		}
-	} while(1);
-};
+	printText("Guide", 0, 0, RGBToWord(0xff,0xff,0),0);
+	printText("Use the arrow keys ", 0, 20, RGBToWord(0xff,0xff,0),0);
+	printText("to move the monkey ", 0, 40, RGBToWord(0xff,0xff,0),0);
+	printText("Collect the good ", 0, 60, RGBToWord(0xff,0xff,0),0);
+	printText("bananas to gain ", 0, 80, RGBToWord(0xff,0xff,0),0);
+	printText("points Avoid the bad bananas to not lose points You have 3 lives Press the restart button to restart the game", 0, 100, RGBToWord(0xff,0xff,0),0);
+	printText("Press the start button to go back to the menu", 0, 120, RGBToWord(0xff,0xff,0),0);
+}
