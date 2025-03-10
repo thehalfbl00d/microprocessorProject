@@ -108,6 +108,7 @@ int main()
 	
 
 	
+	
 	//startup screen
 	fillRectangle(0,0,128,160,0);
 	printText("Press Start Key!", 0, 0, RGBToWord(0xff,0xff,0),0);
@@ -642,7 +643,7 @@ void drawHearts(int hearts) {
 
 void harryPotterTheme(){	
 	initSound();
-for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 1; i++)
 {
     playNote(E5);
     delay(150);
