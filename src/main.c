@@ -34,6 +34,9 @@ void lostSound();
 int collisions(int x, int y, int hearts);
 void guide();
 void menu();
+void spawnPotions();
+void revealBad();
+int cleanPotion();
 
 int points = 0;
 int *pointsPtr = &points;
@@ -46,6 +49,7 @@ typedef struct {
 Spot goodBananas[MAX_SPOTS_GOOD];
 Spot badBananas[MAX_SPOTS_GOOD];
 
+Spot potion[1];
 
 volatile uint32_t milliseconds;
 
@@ -107,7 +111,7 @@ int main()
 	setupIO();
 	
 
-	
+	//harryPotterTheme();
 	
 	//startup screen
 	fillRectangle(0,0,128,160,0);
@@ -124,6 +128,32 @@ int main()
 	menu();
 	
 	return 0;
+}
+
+void spawnPotions(){
+	potion[0].x = prbs() %120;
+	potion[0].y = prbs() %160;
+	putImage(potion[0].x,potion[0].y,12,16,evilBanana,0,0);
+}
+
+int cleanPotion(){
+	fillRectangle(potion[0].x,potion[0].y, 12,16, 0);
+	return 0;
+}
+
+void revealBad(){
+	for(int j = 0; j < 3; j++){
+		for( int i = 0; i < MAX_SPOTS_BAD; i++){
+			putImage(badBananas[i].x,badBananas[i].y,12,16,evilBanana,0,0);
+		}
+		delay(500);
+		for( int i = 0; i < MAX_SPOTS_BAD; i++){
+			fillRectangle(badBananas[i].x,badBananas[i].y,12,16,0);
+		}
+		delay(500);
+	}
+
+	
 }
 
 void menu(){
@@ -156,9 +186,7 @@ void menu(){
 					break;
 				}
 			}
-			fillRectangle(0,0,128,160,0);
-			
-				
+			fillRectangle(0,0,128,160,0);	
 		};
 		if (((GPIOB -> IDR & (1 << 4)) == 0)){
 			int i = 1;
@@ -203,7 +231,7 @@ void game(){
 
 	while(isplaying)
 	{	
-		putImage(100,100,12,16,evilBanana,0,0);
+		putImage(x,y,16,16,monkey1,0,0);
 		drawHearts(hearts);
 		while(ingame)
 		{	
@@ -299,6 +327,9 @@ void game(){
 		}
 		//game over screen
 		if (hearts == 0){
+			revealBad();
+			delay(500);
+			
 			fillRectangle(0,0,128,160,0);
 			printTextX2("GAME OVER", 0,10, RGBToWord(0xff,0xff,0),0);
 			printText(" < Restart Button", 0,30, RGBToWord(0xff,0xff,0),0);
@@ -508,9 +539,10 @@ int collisions(int x, int y, int hearts){
 			goodBananas[i].y = 0xFFFF;
 			(*pointsPtr)++;
 			playNote(G4);
-			if (*pointsPtr % 3 == 0){
+			if (*pointsPtr % 5 == 0){
 				removebadBanana();
 				removeGoodBanana();
+				putImage(x,y, 12,16, monkey1, 0, 0);
 				printNumberX2(*pointsPtr, 0, 0, RGBToWord(0xff,0xff,0),0);
 				randomize();
 				generateGoodRandomSpots();
@@ -518,6 +550,12 @@ int collisions(int x, int y, int hearts){
 				generateBadRandomSpots();
 				drawBadSpots();
 				drawGoodSpots();
+				if (cleanPotion != 0){
+					continue;
+				} else{
+					cleanPotion();
+				}
+				spawnPotions();
 			};
 			printNumberX2(*pointsPtr, 0, 0, RGBToWord(0xff,0xff,0),0);
 		}
@@ -527,7 +565,7 @@ int collisions(int x, int y, int hearts){
 			isInside(badBananas[i].x,badBananas[i].y,12,16,x+16,y+16))
 		{
 			fillRectangle(badBananas[i].x,badBananas[i].y,16,16,0);
-
+			putImage(x,y, 12,16, monkey1, 0, 0);
 			playNote(E4);
 			delay(10);
 			playNote(A4);
@@ -537,7 +575,22 @@ int collisions(int x, int y, int hearts){
 			drawHearts(hearts);
 			
 		};
+		
 	};
+	if(	isInside(potion[0].x,potion[0].y,12,16,x,y) || 
+			isInside(potion[0].x,potion[0].y,12,16,x+16,y) || 
+			isInside(potion[0].x,potion[0].y,12,16,x,y+16) || 
+			isInside(potion[0].x,potion[0].y,12,16,x+16,y+16)){
+				fillRectangle(potion[0].x,potion[0].y,16,16,0);
+				hearts = 4;
+				drawHearts(hearts);
+				playNote(A4);
+				playNote(G4);
+				delay(100);
+				potion[0].x = 0xFFFF;
+				potion[0].y = 0xFFFF;
+
+			}
 	return hearts;
 }
 
@@ -642,89 +695,54 @@ void drawHearts(int hearts) {
 }
 
 void harryPotterTheme(){	
-	initSound();
-	for (int i = 0; i < 1; i++)
-{
-    playNote(E5);
-    delay(150);
-    playNote(B4);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(D5);
-    delay(300);
-    playNote(C5);
-    delay(150);
-    playNote(B4);
-    delay(150);
-    playNote(A4);
-    delay(300);
-    playNote(A4);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(E5);
-    delay(300);
-    playNote(D5);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(B4);
-    delay(300);
-    playNote(B4);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(D5);
-    delay(300);
-    playNote(E5);
-    delay(300);
-    playNote(C5);
-    delay(300);
-    playNote(A4);
-    delay(300);
-    playNote(A4);
-    delay(300);
-    
-    playNote(D5);
-    delay(300);
-    playNote(F5);
-    delay(150);
-    playNote(A5);
-    delay(300);
-    playNote(G5);
-    delay(150);
-    playNote(F5);
-    delay(150);
-    playNote(E5);
-    delay(300);
-    playNote(C5);
-    delay(150);
-    playNote(E5);
-    delay(300);
-    playNote(D5);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(B4);
-    delay(300);
-    playNote(B4);
-    delay(150);
-    playNote(C5);
-    delay(150);
-    playNote(D5);
-    delay(300);
-    playNote(E5);
-    delay(300);
-    playNote(C5);
-    delay(300);
-    playNote(A4);
-    delay(300);
-    playNote(A4);
-    delay(300);
-	playNote(0);
+    initSound();
+    for (int i = 0; i < 1; i++)
+    {
+        playNote(B4);
+        delay(300);
+        playNote(E5);
+        delay(300);
+        playNote(G5);
+        delay(300);
+        playNote(F5);
+        delay(150);
+        playNote(E5);
+        delay(300);
+
+        playNote(B4);
+        delay(300);
+        playNote(D5);
+        delay(300);
+        playNote(F5);
+        delay(300);
+        playNote(E5);
+        delay(150);
+        playNote(D5);
+        delay(300);
+
+        playNote(B4);
+        delay(300);
+        playNote(E5);
+        delay(300);
+        playNote(G5);
+        delay(300);
+        playNote(F5);
+        delay(150);
+        playNote(E5);
+        delay(300);
+
+        playNote(B4);
+        delay(300);
+        playNote(D5);
+        delay(300);
+        playNote(F5);
+        delay(300);
+        playNote(E5);
+        delay(150);
+        playNote(D5);
+        delay(300);
+    }
 }
-};
 
 void lostSound(){
 	initSound();
