@@ -250,6 +250,8 @@ void revealBad()
 	playNote(0);
 }
 
+
+
 void nokia()
 {
 	initSound();
