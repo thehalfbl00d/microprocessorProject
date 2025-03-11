@@ -1,6 +1,5 @@
 #include <stm32f031x6.h>
 #include "display.h"
-#define MAZE_BLOCK_COUNT 5
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
@@ -9,6 +8,10 @@
 
 #define MAX_SPOTS_GOOD 10
 #define MAX_SPOTS_BAD 4
+#define MAX_STARS_COUNT 5
+#define MAZE_BLOCK_COUNT 5
+
+
 uint32_t shift_register=0;
 void initClock(void);
 void initSysTick(void);
@@ -31,17 +34,18 @@ void removebadBanana();
 void drawHearts(int Hearts);
 void harryPotterTheme();
 void lostSound();
-int collisions(int x, int y, int hearts);
-void guide();
+int collisions(int x, int y, int hearts);;
 void menu();
 void spawnPotions();
 void revealBad();
 int cleanPotion();
+void nokia();
 
 int points = 0;
 int *pointsPtr = &points;
 int topScore = 0;
-typedef struct {
+typedef struct 
+{
 	uint16_t x;
 	uint16_t y;
 } Spot;
@@ -50,6 +54,7 @@ Spot goodBananas[MAX_SPOTS_GOOD];
 Spot badBananas[MAX_SPOTS_GOOD];
 
 Spot potion[1];
+Spot stars[MAX_STARS_COUNT];
 
 volatile uint32_t milliseconds;
 
@@ -60,12 +65,6 @@ const uint16_t monkey1[]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 const uint16_t monkey2[]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,30300,30300,30300,30300,30300,30300,30300,30300,4098,0,0,0,0,30300,30300,4098,30300,0,30300,30300,30300,30300,0,30300,4098,30300,30300,0,0,30300,30300,4098,30300,30300,30300,30300,30300,30300,30300,30300,4098,30300,30300,0,0,30300,30300,4098,30300,0,30300,30300,30300,30300,0,30300,4098,30300,30300,0,0,30300,30300,4098,4098,0,0,0,0,0,0,4098,4098,30300,30300,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,30300,0,0,0,0,4098,30300,30300,4098,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,30300,30300,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,0,4098,30300,30300,4098,0,0,0,0,30300,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,30300,30300,30300,0,0,0,0,30300,30300,30300,0,0,0,0,0,0,0,0,0,0,0};
 const uint16_t monkeyUp[]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,0,0,0,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,30300,30300,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,30300,30300,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,0,4098,30300,30300,30300,30300,30300,30300,30300,30300,4098,0,0,0,0,0,0,4098,30300,0,30300,30300,30300,30300,0,30300,4098,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-const uint16_t deco1[]= {0,0,0,0,4,4,4,4,4,0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,65415,65415,65415,248,65415,0,0,0,0,0,0,0,65415,65415,65415,65415,65415,8068,0,0,0,0,0,0,65415,65415,65415,4096,4096,0,0,0,0,0,0,0,0,65415,65415,65415,0,0,0,0,0,0,0,0,0,7936,7936,7936,0,0,0,0,0,0,0,0,7936,7936,65535,7936,0,0,0,0,0,0,0,0,7936,7936,65535,7936,7936,7936,7936,0,0,0,0,0,7936,7936,65535,65535,65535,65535,7936,0,0,0,0,0,7936,7936,7936,7936,7936,7936,7936,0,0,0,0,0,7936,7936,7936,7936,0,0,0,0,0,0,0,0,0,7936,65535,7936,0,0,0,0,0,0,0,0,0,7936,65535,7936,0,0,0,0,0,0,0,0,0,7936,65535,7936,0,0,0,0,0,0,0,0,0,7940,7940,7940,7940,0,0,0,};
-const uint16_t deco2[]= {0,0,0,0,0,4,4,4,4,4,0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,65415,65415,65415,248,65415,0,0,0,0,0,0,0,65415,65415,65415,65415,65415,8068,0,0,0,0,0,0,65415,65415,65415,4096,4096,0,0,0,0,0,0,0,0,65415,65415,65415,0,0,0,0,0,0,0,0,7936,7936,7936,0,0,0,0,0,0,0,0,7936,7936,65535,7936,0,0,0,0,0,0,0,0,7936,7936,65535,7936,7936,7936,7936,0,0,0,0,0,7936,7936,65535,65535,65535,65535,7936,0,0,0,0,0,7936,7936,7936,7936,7936,7936,7936,0,0,0,0,0,7936,7936,7936,7936,0,0,0,0,0,0,0,0,0,40224,7936,65535,7936,0,0,0,0,0,0,0,40224,40224,7936,65535,7936,0,0,0,0,0,0,65315,40224,40224,7936,65535,40224,0,0,0,0,0,0,0,65315,0,65315,65315,65315,65315,0,0,};
-const uint16_t deco3[]= 
-{
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,4,0,0,0,0,0,0,0,0,0,0,4,4,0,0,0,0,0,0,0,0,0,4,4,4,4,0,0,0,0,0,0,0,4,4,4,4,4,4,0,0,0,0,7936,7936,4,4,4,4,4,4,7936,7936,0,0,65535,65535,4,4,4,4,4,4,65535,65535,0,0,7936,7936,4,4,4,4,4,4,7936,7936,0,0,0,0,0,4,4,4,4,0,0,0,0,0,0,0,0,0,24327,24327,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-};
 const uint16_t goodBanana[]=
 {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,0,65287,48141,0,0,0,0,0,0,0,0,0,65287,65287,48141,0,0,0,0,0,0,0,0,0,65287,65287,65287,0,0,0,0,0,0,0,0,65287,65287,65287,48141,0,0,4098,4098,0,0,0,0,65287,65287,65287,48141,0,0,4098,4098,0,0,65287,65287,65287,65287,48141,48141,0,0,65287,65287,65287,65287,65287,65287,65287,65287,48141,48141,0,0,0,48141,48141,65287,65287,65287,65287,48141,0,0,0,0,0,0,0,48141,48141,48141,48141,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -91,6 +90,18 @@ const uint16_t evilBanana[] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,4098,4098,0,0,0,0,0,0,0,0,0,0,0,7936,46120,0,0,0,0,0,0,0,0,0,7936,7936,46120,0,0,0,0,0,0,0,0,0,7936,7936,7936,0,0,0,0,0,0,0,0,7936,7936,7936,46120,0,0,4098,4098,0,0,0,0,7936,7936,7936,46120,0,0,4098,4098,0,0,7936,7936,7936,7936,46120,46120,0,0,7936,7936,7936,7936,7936,7936,7936,7936,46120,46120,0,0,0,46120,46120,7936,7936,7936,7936,46120,0,0,0,0,0,0,0,46120,46120,46120,46120,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
+const uint16_t potionCask[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4228,4228,4228,4228,4228,0,0,0,0,0,0,0,0,0,65535,65535,65535,65535,65535,65535,65535,0,0,0,0,0,0,0,0,65535,4228,4228,4228,4228,4228,65535,0,0,0,0,0,0,0,0,0,65535,0,0,0,65535,0,0,0,0,0,0,0,0,0,0,65535,0,0,0,65535,0,0,0,0,0,0,0,0,0,0,65535,0,0,0,65535,0,0,0,0,0,0,0,0,0,65535,0,0,0,0,0,65535,0,0,0,0,0,0,0,65535,4228,4228,4228,4228,4228,4228,4228,65535,0,0,0,0,0,65535,4228,4228,65535,65535,65535,4228,4228,4228,4228,65535,0,0,0,0,65535,4228,4228,4228,4228,4228,4228,4228,4228,4228,65535,0,0,0,0,65535,4228,4228,4228,4228,65535,4228,4228,4228,4228,65535,0,0,0,0,65535,4228,4228,4228,4228,4228,4228,65535,4228,4228,65535,0,0,0,0,65535,4228,4228,4228,4228,4228,4228,4228,4228,4228,65535,0,0,0,0,0,65535,4228,4228,4228,4228,4228,4228,4228,65535,0,0,0,0,0,0,0,65535,65535,65535,65535,65535,65535,65535,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+
+const uint16_t star[] = {
+	0,0,0,0,0,65287,65287,0,0,0,0,0,0,0,0,0,0,65287,65287,0,0,0,0,0,0,0,0,0,65287,65287,65287,65287,0,0,0,0,0,0,0,0,65287,65287,65287,65287,0,0,0,0,0,0,0,0,65287,65287,65287,65287,0,0,0,0,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,0,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,0,0,0,65287,65287,65287,65287,65287,65287,65287,65287,0,0,0,0,65287,65287,65287,65287,65287,65287,65287,65287,0,0,0,0,65287,65287,65287,65287,65287,65287,65287,65287,0,0,0,65287,65287,65287,65287,65287,65287,65287,65287,65287,65287,0,0,65287,65287,65287,65287,0,0,65287,65287,65287,65287,0,0,65287,65287,65287,0,0,0,0,65287,65287,65287,0,65287,65287,0,0,0,0,0,0,0,0,65287,65287,65287,65287,0,0,0,0,0,0,0,0,65287,65287,
+};
+
+const uint16_t smonkey[] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,65535,65535,65535,65535,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4228,4228,4228,65535,65535,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,65535,65535,4228,0,0,0,0,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,0,0,0,0,0,65535,65535,4228,0,0,0,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,65535,65535,65535,65535,65535,65535,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4228,4228,0,0,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,65535,65535,65535,65535,65535,4228,4228,4228,4228,4228,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4228,4228,4228,65535,65535,4098,4098,4098,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,4098,65535,65535,4098,4098,4098,4098,0,0,0,0,0,0,0,4098,4098,4098,4098,4098,31117,31117,31117,31117,4098,4098,4098,4098,4098,31117,31117,65535,65535,4228,4098,4098,4098,4098,0,0,0,0,0,0,0,4098,4098,4098,4098,31117,31117,31117,31117,31117,31117,4098,4098,31117,31117,31117,31117,65535,65535,65535,65535,65535,4098,4098,0,0,0,0,0,0,0,4098,4098,4098,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,4228,4228,4228,4228,4228,4098,4098,0,0,0,0,0,0,0,4098,4098,4098,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,4098,4098,0,0,0,0,0,31117,31117,31117,31117,4098,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,4098,31117,31117,31117,31117,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,31117,31117,31117,31117,31117,0,31117,31117,31117,31117,0,31117,31117,31117,31117,31117,31117,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,31117,31117,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,31117,31117,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,31117,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+
 void populate(){
 	fillRectangle(0,0,128,160,0);
 	randomize();
@@ -99,68 +110,45 @@ void populate(){
 	generateBadRandomSpots();
 	drawBadSpots();
 	drawGoodSpots();
-	
 }
+
+
 
 int main()
 {	
-	
 	//initialize cocks
 	initClock();
 	initSysTick();
 	setupIO();
+
+	//draw startup screen
 	
+	//Prints out the name of the game at the bottom of the screen
+	printTextX2("Potassium", 0, 120,1,0);
+	printTextX2("Primates", 0, 140 , 1 , 0);
+
 
 	//harryPotterTheme();
+	//nokia();
 	
-	//startup screen
-	fillRectangle(0,0,128,160,0);
-	printText("Press Start Key!", 0, 0, RGBToWord(0xff,0xff,0),0);
-	putImage(10,10,50,50,startup,0,0);
-	initSound();
-	//harryPotterTheme();
-	while((GPIOB -> IDR & (1 << 3)) != 0){
-		int isplaying = 0;
-	};
+	//startup screen and mutes
+	playNote(0);
+
+	//Wait for input then goes to menu
+	while((GPIOB -> IDR & (1 << 3)) != 0);
 	
-	
-	fillRectangle(0,0,128,160,0);
 	menu();
 	
 	return 0;
 }
 
-void spawnPotions(){
-	potion[0].x = prbs() %120;
-	potion[0].y = prbs() %160;
-	putImage(potion[0].x,potion[0].y,12,16,evilBanana,0,0);
-}
-
-int cleanPotion(){
-	fillRectangle(potion[0].x,potion[0].y, 12,16, 0);
-	return 0;
-}
-
-void revealBad(){
-	for(int j = 0; j < 3; j++){
-		for( int i = 0; i < MAX_SPOTS_BAD; i++){
-			putImage(badBananas[i].x,badBananas[i].y,12,16,evilBanana,0,0);
-		}
-		delay(500);
-		for( int i = 0; i < MAX_SPOTS_BAD; i++){
-			fillRectangle(badBananas[i].x,badBananas[i].y,12,16,0);
-		}
-		delay(500);
-	}
-
-	
-}
-
-void menu(){
+void menu()
+{
 	fillRectangle(0,0,128,160,0);
 
-	while(1){
-		
+	while(1)
+	{
+		//Prints out the menu options
 		printTextX2("Menu", 40, 0, RGBToWord(0xff,0xff,0),0);
 		drawRectangle(10, 20, 108, 130, RGBToWord(0xff,0xff,0));
 		printText("^. Play", 20, 40, RGBToWord(0xff,0xff,0),0);
@@ -168,59 +156,132 @@ void menu(){
 		printText(">. Credits", 20, 80, RGBToWord(0xff,0xff,0),0);
 		printText("<. Exit", 20, 100, RGBToWord(0xff,0xff,0),0);
 
+		//If you press up, enters the game
 		if((GPIOA -> IDR & (1 << 8)) == 0){
 			game();
 			break;
 		}
-		if((GPIOA -> IDR & (1 << 11)) == 0){
+
+		//Prints out the guide
+		if((GPIOA -> IDR & (1 << 11)) == 0)
+		{
 			int i = 1;
 			fillRectangle(0,0,128,160,0);
-				printText("Guide", 0, 0, RGBToWord(0xff,0xff,0),0);
-				printText("Use the arrow keys ", 0, 20, RGBToWord(0xff,0xff,0),0);
-				printText("to move the monkey ", 0, 40, RGBToWord(0xff,0xff,0),0);
-				printText("Collect the good ", 0, 60, RGBToWord(0xff,0xff,0),0);
-				printText("bananas to gain ", 0, 80, RGBToWord(0xff,0xff,0),0);
-			while(i){
-				if ((GPIOB -> IDR & (1 << 3)) == 0){
+			printText("Guide", 0, 0, RGBToWord(0xff,0xff,0),0);
+			printText("Use the arrow keys ", 0, 20, RGBToWord(0xff,0xff,0),0);
+			printText("to move the monkey ", 0, 40, RGBToWord(0xff,0xff,0),0);
+			printText("Collect the good ", 0, 60, RGBToWord(0xff,0xff,0),0);
+			printText("bananas to gain ", 0, 80, RGBToWord(0xff,0xff,0),0);
+
+			//Makes sure to stay in menu until special key is pressed
+			while(i)
+			{
+				if ((GPIOB -> IDR & (1 << 3)) == 0)
+				{
 					i = 0;
 					break;
 				}
 			}
 			fillRectangle(0,0,128,160,0);	
-		};
-		if (((GPIOB -> IDR & (1 << 4)) == 0)){
+		}
+
+		//This prints out the credits
+		if (((GPIOB -> IDR & (1 << 4)) == 0))
+		{
 			int i = 1;
 			fillRectangle(0,0,128,160,0);
 			printTextX2("Credits", 0, 0, RGBToWord(0xff,0xff,0),0);
 			printText("Akshat Pasbola", 0, 20, RGBToWord(0xff,0xff,0),0);
 			printText("Kieron Shiels", 0, 30, RGBToWord(0xff,0xff,0),0);
 			printText("Harry Rison", 0, 40, RGBToWord(0xff,0xff,0),0);
-			while(i){
-				if ((GPIOB -> IDR & (1 << 3)) == 0){
+
+			while(i)
+			{
+				if ((GPIOB -> IDR & (1 << 3)) == 0)
+				{
 					i = 0;
 					break;
 				}
 			}
 			fillRectangle(0,0,128,160,0);
-		};
+		}
 
-		if (((GPIOB -> IDR & (1 << 5)) == 0)){
+		//Once exited, game prints out "Goodbye"
+		if (((GPIOB -> IDR & (1 << 5)) == 0))
+		{
 			fillRectangle(0,0,128,160,0);
 			printTextX2("Goodbye!", 0, 0, RGBToWord(0xff,0xff,0),0);
 			break;
 		}
-	};
+	}
 }
 
-void game(){
+//This spawns potions into the gane
+void spawnPotions()
+{
+	potion[0].x = prbs() %120;
+	potion[0].y = prbs() %160;
+	putImage(potion[0].x,potion[0].y,15,20,potionCask,0,0);
+}
+
+//Once potion potion is picked up, image is removed
+int cleanPotion()
+{
+	fillRectangle(potion[0].x,potion[0].y, 15,20, 0);
+	return 0;
+}
+
+//Once player has no more life, the remaining bad bananas are revealed
+void revealBad()
+{
+	for(int j = 0; j < 3; j++)
+	{
+		for( int i = 0; i < MAX_SPOTS_BAD; i++)
+		{
+			putImage(badBananas[i].x,badBananas[i].y,12,16,evilBanana,0,0);
+		}
+		delay(500);
+		for( int i = 0; i < MAX_SPOTS_BAD; i++)
+		{
+			fillRectangle(badBananas[i].x,badBananas[i].y,12,16,0);
+		}
+		delay(500);
+	}
+	playNote(0);
+}
+
+void nokia()
+{
+	initSound();
+	playNote(E5);
+	delay(200);
+	playNote(D5);
+	delay(200);
+	playNote(FS4_Gb4);
+	delay(400);
+	playNote(GS4_Ab4);
+	delay(400);
+	playNote(CS5_Db5);
+	delay(200);
+	playNote(B4);
+	delay(200);
+	playNote(D4);
+	delay(400);
+	playNote(E4);
+	delay(400);
+}
+
+void game()
+{
 	//yeye variables
+
 	populate();
+
 	int hinverted = 0;
 	int vinverted = 0;
 	int toggle = 0;
 	int hmoved = 0;
 	int vmoved = 0;
-	int buttonPressed = 0;
 	int ingame = 1;
 	int hearts = 4;
 	int isplaying = 1;
@@ -235,7 +296,8 @@ void game(){
 		drawHearts(hearts);
 		while(ingame)
 		{	
-			if (((GPIOB -> IDR & (1 << 3)) == 0)){
+			if (((GPIOB -> IDR & (1 << 3)) == 0))
+			{
 				menu();
 				ingame = 0;
 				break;
@@ -252,10 +314,12 @@ void game(){
 			hmoved = vmoved = 0;
 			hinverted = vinverted = 0;
 
-			if ((GPIOA ->IDR & (1 << 0) == 0)){
+			if ((GPIOA ->IDR & (1 << 0) == 0))
+			{
 				GPIOA -> ODR |= (1 << 1);
 			};
 			
+			//The input for up, down, left, right
 			if ((GPIOB->IDR & (1 << 4))==0) // right pressed
 			{				
 				GPIOA->ODR |= (1 << 1);			
@@ -266,6 +330,7 @@ void game(){
 					hinverted=0;
 				}						
 			}
+
 			if ((GPIOB->IDR & (1 << 5))==0) // left pressed
 			{	
 				GPIOA->ODR |= (1 << 1);		
@@ -277,6 +342,7 @@ void game(){
 					hinverted=1;
 				}			
 			}
+
 			if ( (GPIOA->IDR & (1 << 11)) == 0) // down pressed
 			{
 				GPIOA->ODR |= (1 << 1);		
@@ -287,6 +353,7 @@ void game(){
 					vinverted = 0;
 				}
 			}
+
 			if ( (GPIOA->IDR & (1 << 8)) == 0) // up pressed
 			{		
 				GPIOA->ODR |= (1 << 1);			
@@ -321,12 +388,15 @@ void game(){
 			}
 
 
-				if(hearts == 0){
+				if(hearts == 0)
+				{
 					ingame = 0;
 				}
 		}
+
 		//game over screen
 		if (hearts == 0){
+			playNote(0);
 			revealBad();
 			delay(500);
 			
@@ -334,18 +404,23 @@ void game(){
 			printTextX2("GAME OVER", 0,10, RGBToWord(0xff,0xff,0),0);
 			printText(" < Restart Button", 0,30, RGBToWord(0xff,0xff,0),0);
 			printText(" > Exit Button", 0,40, RGBToWord(0xff,0xff,0),0);
-			if (*pointsPtr > topScore){
+
+			if (*pointsPtr > topScore)
+			{
 				topScore = *pointsPtr;
 			}
+
 			printText("Score: ", 0, 100, RGBToWord(0xff,0xff,0),0);
 			printNumberX2(*pointsPtr, 0, 110, RGBToWord(0xff,0xff,0),0);
 
 			printText("Top Score: ", 0, 130, RGBToWord(0xff,0xff,0),0);
 			printNumberX2(topScore, 0, 140, RGBToWord(0xff,0xff,0),0);
 			lostSound();
+
 			int insidemenu = 1;
 
-			while(insidemenu){
+			while(insidemenu)
+			{
 				if((GPIOB -> IDR & (1 << 5)) == 0){
 					fillRectangle(0,0,128,160,0);
 					putImage(x,y,16,16,monkey1,0,0);
@@ -364,23 +439,21 @@ void game(){
 					hearts = 3;
 					insidemenu = 0;
 					break;
-				};
-				if((GPIOB -> IDR & (1 << 4)) == 0){
+				}
+
+				if((GPIOB -> IDR & (1 << 4)) == 0)
+				{
 					fillRectangle(0,0,128,160,0);
 					printTextX2("Goodbye!", 0,0, RGBToWord(0xff,0xff,0),0);
 					delay(1000);
 				}
 
 			};
-			
 			//wait for restart
 			//restart game
 		};
-		delay(50);
-		
 	}
 }
-
 
 void initSysTick(void)
 {
@@ -389,26 +462,29 @@ void initSysTick(void)
 	SysTick->VAL = 10;
 	__asm(" cpsie i "); // enable interrupts
 }
+
 void SysTick_Handler(void)
 {
 	milliseconds++;
 }
+
 void initClock(void)
 {
 // This is potentially a dangerous function as it could
 // result in a system with an invalid clock signal - result: a stuck system
-        // Set the PLL up
-        // First ensure PLL is disabled
-        RCC->CR &= ~(1u<<24);
-        while( (RCC->CR & (1 <<25))); // wait for PLL ready to be cleared
-        
+// Set the PLL up
+// First ensure PLL is disabled
+    RCC->CR &= ~(1u<<24);
+
 // Warning here: if system clock is greater than 24MHz then wait-state(s) need to be
 // inserted into Flash memory interface
-				
-        FLASH->ACR |= (1 << 0);
+    while( (RCC->CR & (1 <<25))); // wait for PLL ready to be cleared		
+    	FLASH->ACR |= (1 << 0);
         FLASH->ACR &=~((1u << 2) | (1u<<1));
+
         // Turn on FLASH prefetch buffer
-        FLASH->ACR |= (1 << 4);
+		FLASH->ACR |= (1 << 4);
+
         // set PLL multiplier to 12 (yielding 48MHz)
         RCC->CFGR &= ~((1u<<21) | (1u<<20) | (1u<<19) | (1u<<18));
         RCC->CFGR |= ((1<<21) | (1<<19) ); 
@@ -417,10 +493,12 @@ void initClock(void)
         RCC->CFGR |= (1<<14);
 
         // and turn the PLL back on again
-        RCC->CR |= (1<<24);        
+        RCC->CR |= (1<<24);  
+
         // set PLL as system clock source 
         RCC->CFGR |= (1<<1);
 }
+
 void delay(volatile uint32_t dly)
 {
 	uint32_t end_time = dly + milliseconds;
@@ -433,6 +511,7 @@ void enablePullUp(GPIO_TypeDef *Port, uint32_t BitNumber)
 	Port->PUPDR = Port->PUPDR &~(3u << BitNumber*2); // clear pull-up resistor bits
 	Port->PUPDR = Port->PUPDR | (1u << BitNumber*2); // set pull-up bit
 }
+
 void pinMode(GPIO_TypeDef *Port, uint32_t BitNumber, uint32_t Mode)
 {
 	/*
@@ -443,6 +522,7 @@ void pinMode(GPIO_TypeDef *Port, uint32_t BitNumber, uint32_t Mode)
 	mode_value = mode_value | Mode;
 	Port->MODER = mode_value;
 }
+
 int isInside(uint16_t x1, uint16_t y1, uint16_t w, uint16_t h, uint16_t px, uint16_t py)
 {
 	// checks to see if point px,py is within the rectange defined by x,y,w,h
@@ -450,6 +530,7 @@ int isInside(uint16_t x1, uint16_t y1, uint16_t w, uint16_t h, uint16_t px, uint
 	x2 = x1+w;
 	y2 = y1+h;
 	int rvalue = 0;
+
 	if ( (px >= x1) && (px <= x2))
 	{
 		// ok, x constraint met
@@ -482,13 +563,13 @@ uint16_t readADC(void)
     // Configure ADC
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // Enable ADC clock
     ADC1->CR |= ADC_CR_ADEN;            // Enable ADC
-    while (!(ADC1->ISR & ADC_ISR_ADRDY))
-        ; // Wait for ADC to be ready
+    while (!(ADC1->ISR & ADC_ISR_ADRDY));
+        // Wait for ADC to be ready
 
     // Start ADC conversion
     ADC1->CR |= ADC_CR_ADSTART;
-    while (!(ADC1->ISR & ADC_ISR_EOC))
-        ; // Wait for conversion to complete
+    while (!(ADC1->ISR & ADC_ISR_EOC));
+         // Wait for conversion to complete
 
     // Read ADC value
     uint16_t adc_value = ADC1->DR;
@@ -496,8 +577,9 @@ uint16_t readADC(void)
     // Disable ADC
     ADC1->CR |= ADC_CR_ADDIS;
 
-    return adc_value;
+    return adc_value
 }
+
 void randomize(void)
 {
     // uses ADC noise values to seed the shift_register
@@ -525,8 +607,10 @@ uint32_t prbs()
 	return shift_register & 0x7fffffff; // return 31 LSB's 
 }
 
-int collisions(int x, int y, int hearts){
+int collisions(int x, int y, int hearts)
+{
 	initSound();
+
 	for (int i = 0; i < MAX_SPOTS_GOOD; i++)
 	{
 		if(	isInside(goodBananas[i].x,goodBananas[i].y,12,16,x,y) || 
@@ -535,11 +619,15 @@ int collisions(int x, int y, int hearts){
 			isInside(goodBananas[i].x,goodBananas[i].y,12,16,x+16,y+16))
 		{
 			fillRectangle(goodBananas[i].x,goodBananas[i].y,16,16,0);
+			putImage(x,y, 12,16, monkey1, 0, 0);
 			goodBananas[i].x = 0xFFFF; // Mark as removed
 			goodBananas[i].y = 0xFFFF;
+
 			(*pointsPtr)++;
+
 			playNote(G4);
-			if (*pointsPtr % 5 == 0){
+			if (*pointsPtr % 5 == 0)
+			{
 				removebadBanana();
 				removeGoodBanana();
 				putImage(x,y, 12,16, monkey1, 0, 0);
@@ -550,13 +638,10 @@ int collisions(int x, int y, int hearts){
 				generateBadRandomSpots();
 				drawBadSpots();
 				drawGoodSpots();
-				if (cleanPotion != 0){
-					continue;
-				} else{
-					cleanPotion();
-				}
+				cleanPotion();
 				spawnPotions();
-			};
+			}
+
 			printNumberX2(*pointsPtr, 0, 0, RGBToWord(0xff,0xff,0),0);
 		}
 		if(	isInside(badBananas[i].x,badBananas[i].y,12,16,x,y) ||
@@ -574,28 +659,32 @@ int collisions(int x, int y, int hearts){
 			if (hearts > 0) hearts--;
 			drawHearts(hearts);
 			
-		};
+		}
 		
-	};
+	}
 	if(	isInside(potion[0].x,potion[0].y,12,16,x,y) || 
 			isInside(potion[0].x,potion[0].y,12,16,x+16,y) || 
 			isInside(potion[0].x,potion[0].y,12,16,x,y+16) || 
 			isInside(potion[0].x,potion[0].y,12,16,x+16,y+16)){
-				fillRectangle(potion[0].x,potion[0].y,16,16,0);
-				hearts = 4;
-				drawHearts(hearts);
-				playNote(A4);
-				playNote(G4);
-				delay(100);
-				potion[0].x = 0xFFFF;
-				potion[0].y = 0xFFFF;
+			fillRectangle(potion[0].x,potion[0].y,15,20,0);
+			putImage(x,y, 12,16, monkey1, 0, 0);
 
-			}
+			hearts = 4;
+
+			drawHearts(hearts);
+			playNote(A4);
+			playNote(G4);
+			delay(100);
+			potion[0].x = 0xFFFF;
+			potion[0].y = 0xFFFF;
+		}
 	return hearts;
 }
 
-int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count, int isBad) {
-	for (int i = 0; i < count; i++) {
+int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count, int isBad) 
+{
+	for (int i = 0; i < count; i++) 
+	{
 		if (bananas[i].x != 0xFFFF && // Ensure it's not already removed
 			abs(px - bananas[i].x) < 12 && 
 			abs(py - bananas[i].y) < 16) {
@@ -604,7 +693,8 @@ int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count
 			bananas[i].x = 0xFFFF; // Mark as removed
 			bananas[i].y = 0xFFFF; // Mark as removed
 			
-			if (isBad) {
+			if (isBad) 
+			{
 				return 1; // Return 1 if a bad banana was eaten
 			}
 			return 0; // Return 0 if it was a good banana
@@ -613,15 +703,18 @@ int checkCollisionWithBananas(uint16_t px, uint16_t py, Spot *bananas, int count
 	return 0; // No collision
 }
 
-void generateGoodRandomSpots() {
-    for (int i = 0; i < MAX_SPOTS_GOOD; i++) {
+void generateGoodRandomSpots() 
+{
+    for (int i = 0; i < MAX_SPOTS_GOOD; i++) 
+	{
         uint16_t newX, newY;
         int isOverlapping;
         do {
             newX = prbs() % 110; // Assuming screen width is 120
             newY = prbs() % 130 + 20; // Assuming screen height is 160
             isOverlapping = 0;
-            for (int j = 0; j < i; j++) {
+            for (int j = 0; j < i; j++) 
+			{
                 if (abs(newX - goodBananas[j].x) < 12 && abs(newY - goodBananas[j].y) < 16) {
                     isOverlapping = 1; // Check overlap with previous good spots
                     break;
@@ -634,18 +727,23 @@ void generateGoodRandomSpots() {
     }
 }
 
-void removeGoodBanana() {
-	for (int i = 0; i < MAX_SPOTS_GOOD; i++) {
+void removeGoodBanana() 
+{
+	for (int i = 0; i < MAX_SPOTS_GOOD; i++) 
+	{
 		fillRectangle(goodBananas[i].x, goodBananas[i].y, 16, 16, 0); // Erase banana
 	}
 }
-void removebadBanana() {
-	for (int i = 0; i < MAX_SPOTS_BAD; i++) {
+void removebadBanana() 
+{
+	for (int i = 0; i < MAX_SPOTS_BAD; i++)
+	{
 		fillRectangle(badBananas[i].x, badBananas[i].y, 16, 16, 0); // Erase banana
 	}
 }
 void generateBadRandomSpots() {
-    for (int i = 0; i < MAX_SPOTS_BAD; i++) {
+    for (int i = 0; i < MAX_SPOTS_BAD; i++) 
+	{
         uint16_t newX, newY;
         int isOverlapping;
         do {
@@ -654,16 +752,20 @@ void generateBadRandomSpots() {
             isOverlapping = 0;
 
             // Check overlap with previously placed badBananas
-            for (int j = 0; j < i; j++) {
-                if (abs(newX - badBananas[j].x) < 12 && abs(newY - badBananas[j].y) < 16) {
+            for (int j = 0; j < i; j++) 
+			{
+                if (abs(newX - badBananas[j].x) < 12 && abs(newY - badBananas[j].y) < 16) 
+				{
                     isOverlapping = 1;
                     break;
                 }
             }
 
             // Check overlap with goodBananas
-            for (int j = 0; j < MAX_SPOTS_GOOD; j++) {
-                if (abs(newX - goodBananas[j].x) < 12 && abs(newY - goodBananas[j].y) < 16) {
+            for (int j = 0; j < MAX_SPOTS_GOOD; j++) 
+			{
+                if (abs(newX - goodBananas[j].x) < 12 && abs(newY - goodBananas[j].y) < 16) 
+				{
                     isOverlapping = 1;
                     break;
                 }
@@ -675,26 +777,33 @@ void generateBadRandomSpots() {
     }
 }
 
-void drawGoodSpots() {
-	for (int i = 0; i < MAX_SPOTS_GOOD; i++) {
+void drawGoodSpots() 
+{
+	for (int i = 0; i < MAX_SPOTS_GOOD; i++) 
+	{
 		putImage(goodBananas[i].x, goodBananas[i].y, 12,16, goodBanana, 0, 0); // Assuming bananaImage is defined
 	}
-};
-void drawBadSpots() {
-	for (int i = 0; i < MAX_SPOTS_GOOD; i++) {
+}
+
+void drawBadSpots() 
+{
+	for (int i = 0; i < MAX_SPOTS_GOOD; i++) 
+	{
 		putImage(badBananas[i].x, badBananas[i].y, 12,16, badBanana, 0, 0); // Assuming bananaImage is defined
 	}
-};
+}
 
-void drawHearts(int hearts) {
+void drawHearts(int hearts) 
+{
 	fillRectangle(60,0,80,16,0);
 	for (int i = 0; i < hearts; i++)
 		{
 			putImage(60+16*i,0,16,16,heart,0,0);
-		};
+		}
 }
 
-void harryPotterTheme(){	
+void harryPotterTheme()
+{	
     initSound();
     for (int i = 0; i < 1; i++)
     {
@@ -708,7 +817,6 @@ void harryPotterTheme(){
         delay(150);
         playNote(E5);
         delay(300);
-
         playNote(B4);
         delay(300);
         playNote(D5);
@@ -719,7 +827,6 @@ void harryPotterTheme(){
         delay(150);
         playNote(D5);
         delay(300);
-
         playNote(B4);
         delay(300);
         playNote(E5);
@@ -730,7 +837,6 @@ void harryPotterTheme(){
         delay(150);
         playNote(E5);
         delay(300);
-
         playNote(B4);
         delay(300);
         playNote(D5);
@@ -744,7 +850,8 @@ void harryPotterTheme(){
     }
 }
 
-void lostSound(){
+void lostSound()
+{
 	initSound();
 	for (int i = 0; i < 1; i++)
 	{
@@ -756,8 +863,4 @@ void lostSound(){
 		delay(200);
 		playNote(0);
 	}
-}
-
-void guide(){
-	
 }
